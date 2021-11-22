@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:seren_fl/address_bar.dart';
+import 'package:seren_fl/uri_handler.dart';
 
 import 'gemini.dart';
 import 'gemtext.dart';
@@ -51,105 +52,119 @@ class SerenHomePage extends StatefulWidget {
 }
 
 class _SerenHomePageState extends State<SerenHomePage> {
-
   String? rawGemtext = "";
   List<GemtextLine> lines = [];
   String? error;
+  List<String> history = [];
+
+  var uriHandler = UriHandler();
 
   static const defaultTextSize = 18.0;
   static const defaultPadding = 4.0;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: SizedBox(
-          height: 75.0,
-          child: AddressBar(
-              onHome: onHome, onAddress: onAddress, onOverflow: onOverflow),
-        ),
-        titleSpacing: 0.0,
-        elevation: 0.0,
-        toolbarHeight: 75.0,
-      ),
-      body: ListView.builder(
-        itemCount: lines.length,
-        padding:  EdgeInsets.all(16.0),
-        itemBuilder: (context, position) {
-          var item = lines[position];
-          if (item is Regular) {
-            return Padding(
-                padding: const EdgeInsets.all(defaultPadding),
-                child: Text(
-                    item.line,
-                    style: const TextStyle(fontSize: defaultTextSize)
-                )
-            );
-          } else if (item is Code) {
-            return Text(item.line, style: const TextStyle(fontSize: defaultTextSize));
-          } else if (item is Link) {
-            return InkWell(
-              child: Padding(
-                  padding: const EdgeInsets.all(defaultPadding),
-                  child: Text(
-                    item.description ?? item.url ?? "Bad Link",
-                    style: const TextStyle(
-                        fontSize: defaultTextSize,
-                        decoration: TextDecoration.underline),
-                  )
-              ),
-              onTap: () {
-                log("Link clicked: ${item.url}");
-              },
-            );
-          } else if (item is ImageLink) {
-            return Padding(
-                padding: const EdgeInsets.all(defaultPadding),
-                child: Text(
-                    item.description ?? item.url ?? "Bad Link",
-                    style: const TextStyle(
-                        fontSize: defaultTextSize,
-                        decoration: TextDecoration.underline)
-                )
-            );
-          } else if (item is HeaderSmall) {
-            return Padding(
-                padding: const EdgeInsets.all(defaultPadding),
-                child: Text(item.line, style: const TextStyle(fontSize: 22.0))
-            );
-          } else if (item is HeaderMedium) {
-            return Padding(
-                padding: const EdgeInsets.all(defaultPadding),
-                child: Text(item.line, style: const TextStyle(fontSize: 28.0))
-            );
-          } else if (item is HeaderBig) {
-            return Padding(
-                padding: const EdgeInsets.all(defaultPadding),
-                child: Text(item.line, style: const TextStyle(fontSize: 32.0))
-            );
-          } else if (item is ListItem) {
-            return Padding(
-                padding: const EdgeInsets.all(defaultPadding),
-                child: Text(item.line, style: const TextStyle(fontSize: defaultTextSize))
-            );
-          } else if (item is Quote) {
-            return Padding(
-                padding: const EdgeInsets.all(defaultPadding),
-                child: Text(item.line, style: const TextStyle(fontSize: defaultTextSize))
-            );
-          } else {
-            return Padding(
-                padding: const EdgeInsets.all(defaultPadding),
-                child: Text(item.line, style: const TextStyle(fontSize: defaultTextSize))
-            );
+    return WillPopScope(
+        onWillPop: () {
+          log("onWillPop: History size: ${history.length}");
+          for (var element in history) {
+            log("onWillPop: History item: $element");
+          }
+          if(history.length > 1){
+            history.removeLast();
+            onAddress(history.removeLast());
+            return Future.value(false);
+          }else{
+            return Future.value(true);
           }
         },
-      ),
-    );
+        child: Scaffold(
+          appBar: AppBar(
+            title: SizedBox(
+              height: 75.0,
+              child: AddressBar(
+                  onHome: onHome, onAddress: onAddress, onOverflow: onOverflow),
+            ),
+            titleSpacing: 0.0,
+            elevation: 0.0,
+            toolbarHeight: 75.0,
+          ),
+          body: ListView.builder(
+            itemCount: lines.length,
+            padding: EdgeInsets.all(16.0),
+            itemBuilder: (context, position) {
+              var item = lines[position];
+              if (item is Regular) {
+                return Padding(
+                    padding: const EdgeInsets.all(defaultPadding),
+                    child: Text(item.line,
+                        style: const TextStyle(fontSize: defaultTextSize)));
+              } else if (item is Code) {
+                return Text(item.line,
+                    style: const TextStyle(fontSize: defaultTextSize));
+              } else if (item is Link) {
+                return InkWell(
+                  child: Padding(
+                      padding: const EdgeInsets.all(defaultPadding),
+                      child: Text(
+                        item.description ?? item.url ?? "Bad Link",
+                        style: const TextStyle(
+                            fontSize: defaultTextSize,
+                            decoration: TextDecoration.underline),
+                      )),
+                  onTap: () {
+                    log("Link clicked: ${item.url}");
+                    onAddress(item.url!);
+                  },
+                );
+              } else if (item is ImageLink) {
+                return Padding(
+                    padding: const EdgeInsets.all(defaultPadding),
+                    child: Text(item.description ?? item.url ?? "Bad Link",
+                        style: const TextStyle(
+                            fontSize: defaultTextSize,
+                            decoration: TextDecoration.underline)));
+              } else if (item is HeaderSmall) {
+                return Padding(
+                    padding: const EdgeInsets.all(defaultPadding),
+                    child: Text(item.line,
+                        style: const TextStyle(fontSize: 22.0)));
+              } else if (item is HeaderMedium) {
+                return Padding(
+                    padding: const EdgeInsets.all(defaultPadding),
+                    child: Text(item.line,
+                        style: const TextStyle(fontSize: 28.0)));
+              } else if (item is HeaderBig) {
+                return Padding(
+                    padding: const EdgeInsets.all(defaultPadding),
+                    child: Text(item.line,
+                        style: const TextStyle(fontSize: 32.0)));
+              } else if (item is ListItem) {
+                return Padding(
+                    padding: const EdgeInsets.all(defaultPadding),
+                    child: Text(item.line,
+                        style: const TextStyle(fontSize: defaultTextSize)));
+              } else if (item is Quote) {
+                return Padding(
+                    padding: const EdgeInsets.all(defaultPadding),
+                    child: Text(item.line,
+                        style: const TextStyle(fontSize: defaultTextSize)));
+              } else {
+                return Padding(
+                    padding: const EdgeInsets.all(defaultPadding),
+                    child: Text(item.line,
+                        style: const TextStyle(fontSize: defaultTextSize)));
+              }
+            },
+          ),
+        ));
   }
 
   onHome() {
     log("Home clicked");
+    history.clear();
+    uriHandler.initialise("gemini://seren.orllewin.uk");
+    onAddress(uriHandler.uri);
   }
 
   onOverflow(int menuId) {
@@ -189,14 +204,37 @@ class _SerenHomePageState extends State<SerenHomePage> {
   onAddress(String address) async {
     log("main onAddress: $address");
 
+    uriHandler.resolve(address);
+
+    var resolvedAddress = uriHandler.uri;
+
     var gemini = Gemini();
-    var response = await gemini.geminiRequest(address);
+    var response = await gemini.geminiRequest(resolvedAddress);
     var parsedResponse = gemini.parseResponse(response);
+
+    if (parsedResponse.error == null) {
+      //add resolvedAddress to history
+      if(history.isEmpty || history.last != resolvedAddress) {
+        if(history.isEmpty){
+          log("Adding $resolvedAddress to history, history is empty currently");
+        }else{
+          log("Adding $resolvedAddress to history, currently last history item: ${history.last}");
+        }
+
+        history.add(resolvedAddress);
+      }
+    }
+
+    //todo - better way?
+    List<String> updatedHistory = [];
+    updatedHistory.addAll(history);
+    history.clear();
 
     setState(() {
       rawGemtext = parsedResponse.rawGemtext;
       lines = parsedResponse.lines;
       error = parsedResponse.error;
+      history = updatedHistory;
     });
   }
 }
