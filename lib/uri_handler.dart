@@ -1,51 +1,50 @@
 //Port of class by the same name from Kotlin version of Seren
-class UriHandler{
+class UriHandler {
+  String uri = "gemini://seren.orllewin.uk";
+  String host = "seren.orllewin.uk";
 
-  String uri = "";
-  String host = "";
-
-  initialise(String uri){
+  initialise(String uri) {
     this.uri = uri;
     extractHost();
   }
 
-  extractHost(){
-    if(uri.isEmpty) return;
+  extractHost() {
+    if (uri.isEmpty) return;
 
     String urn = uri.replaceFirst("gemini://", "");
-    if(urn.contains("/")){
+    if (urn.contains("/")) {
       host = urn.substring(0, urn.indexOf("/"));
-    }else{
+    } else {
       host = urn;
     }
   }
 
-  resolve(String reference){
-    if(uri == "gemini://$host") uri = "$uri/";
+  resolve(String reference) {
+    if (uri == "gemini://$host") uri = "$uri/";
 
-    if(reference.startsWith("./")){
+    if (reference.startsWith("./")) {
       removeInDirectoryReferences();
       initialise("$uri${reference.substring(2)}");
-    }else if(reference.startsWith("//")){
+    } else if (reference.startsWith("//")) {
       initialise("gemini:$reference");
-    }else if(reference.startsWith("gemini://")){
+    } else if (reference.startsWith("gemini://")) {
       initialise(reference);
-    }else if(reference.startsWith("/")){
+    } else if (reference.startsWith("/")) {
       uri = "gemini://$host$reference";
-    }else if(reference.startsWith("../")){
+    } else if (reference.startsWith("../")) {
       removeInDirectoryReferences();
       int traversalCount = reference.split("../").length - 1;
       uri = traverse(traversalCount) + reference.replaceAll("../", "");
-    }else{
-      if(uri.endsWith("/")){
+    } else {
+      if (uri.endsWith("/")) {
         uri = "${uri}$reference";
-      }else{
+      } else {
         uri = "${uri.substring(0, uri.lastIndexOf("/"))}/$reference";
       }
     }
   }
 
-  String traverse(int count){
+  String traverse(int count) {
     String path = uri.replaceFirst("gemini://$host", "");
     List<String> segments = path.split("/");
     segments.removeWhere((element) => element.isEmpty);
@@ -53,8 +52,8 @@ class UriHandler{
     var nouri = "gemini://$host";
 
     var index = 0;
-    for(var segment in segments){
-      if(index < segmentCount - count){
+    for (var segment in segments) {
+      if (index < segmentCount - count) {
         nouri += "/$segment";
       }
     }
@@ -62,10 +61,9 @@ class UriHandler{
     return "$nouri/";
   }
 
-  removeInDirectoryReferences(){
-    if(!uri.endsWith("/")){
+  removeInDirectoryReferences() {
+    if (!uri.endsWith("/")) {
       uri = uri.substring(0, uri.lastIndexOf("/") + 1);
     }
   }
-
 }

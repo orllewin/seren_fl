@@ -16,8 +16,7 @@ class Response {
   final String meta;
 
   factory Response.empty() = Empty;
-  factory Response.gemtext(int responseCode, String meta, String body) =
-      Gemtext;
+  factory Response.gemtext(int responseCode, String meta, String body) = Gemtext;
   factory Response.error(int responseCode, String meta) = Error;
   factory Response.other(int responseCode, String meta) = Other;
 }
@@ -27,16 +26,14 @@ class Empty extends Response {
 }
 
 class Parsed extends Response {
-  Parsed(this.rawGemtext, this.lines, this.error)
-      : super._(Response.responseParsed, "");
+  Parsed(this.rawGemtext, this.lines, this.error) : super._(Response.responseParsed, "");
   final String? rawGemtext;
   final List<GemtextLine> lines;
   final String? error;
 }
 
 class Gemtext extends Response {
-  Gemtext(int responseCode, String meta, this.body)
-      : super._(responseCode, meta);
+  Gemtext(int responseCode, String meta, this.body) : super._(responseCode, meta);
   final String body;
 }
 
@@ -51,32 +48,28 @@ class Other extends Response {
 class Gemini {
   Future<Response> geminiRequest(String address) async {
     var uri = Uri.tryParse(address);
-    if (uri == null)
+
+    if (uri == null) {
       return Response.error(Response.responseCodeNoAddress, "Address is null");
+    }
 
     var port = uri.hasPort ? uri.port : 1965;
-    var socket = await RawSecureSocket.connect(uri.host, port,
-        timeout: const Duration(seconds: 7),
-        onBadCertificate: (X509Certificate cert) {
+    var socket = await RawSecureSocket.connect(uri.host, port, timeout: const Duration(seconds: 7), onBadCertificate: (X509Certificate cert) {
       //this allows self-signed certs
       return true;
     });
 
-    socket.write(const Utf8Encoder().convert(address + "\r\n"));
-
     var response = Response.empty();
-    var x = socket.timeout(const Duration(seconds: 7), onTimeout: (x) {
-      x.close();
-      response =
-          Response.error(Response.responseCodeTimeout, "Request timed out");
+    socket.timeout(const Duration(seconds: 7), onTimeout: (socket) {
+      response = Response.error(Response.responseCodeTimeout, "Request timed out");
+      socket.close();
     });
-
-    int responseCode = -100;
-    String meta = "";
 
     String body = "";
 
-    await x.listen((event) {
+    socket.write(const Utf8Encoder().convert(address + "\r\n"));
+
+    await socket.listen((event) {
       switch (event) {
         case RawSocketEvent.read:
           var bytes = socket.read();
@@ -89,7 +82,7 @@ class Gemini {
 
           break;
         case RawSocketEvent.write:
-          //
+          //NOOP
           break;
         case RawSocketEvent.readClosed:
           socket.close();
@@ -105,8 +98,8 @@ class Gemini {
 
     var firstLine = LineSplitter.split(body).first;
     var responseCodeStr = firstLine.split(" ").first.trim();
-    responseCode = int.parse(responseCodeStr);
-    meta = firstLine.replaceAll(responseCodeStr, "").trim();
+    var responseCode = int.parse(responseCodeStr);
+    var meta = firstLine.replaceAll(responseCodeStr, "").trim();
 
     log("meta: $meta");
 
@@ -147,9 +140,7 @@ class Gemini {
           }
 
           //Image Link
-          if (segments.first.toLowerCase().endsWith(".png") ||
-              segments.first.toLowerCase().endsWith(".jpg") ||
-              segments.first.toLowerCase().endsWith(".jpeg")) {
+          if (segments.first.toLowerCase().endsWith(".png") || segments.first.toLowerCase().endsWith(".jpg") || segments.first.toLowerCase().endsWith(".jpeg")) {
             parsedLines.add(GemtextLine.imageLink(line, url, description));
           } else {
             //Regular link
@@ -173,13 +164,11 @@ class Gemini {
       return Parsed(response.body, parsedLines, null);
     } else if (response is Error) {
       log("Gemini response type: Error");
-      return Parsed(
-          null, [], "${response.responseCode.toString()}: ${response.meta}");
+      return Parsed(null, [], "${response.responseCode.toString()}: ${response.meta}");
     } else if (response is Other) {
       log("Gemini response type: Other");
       //Something we don't handle yet
-      return Parsed(
-          null, [], "${response.responseCode.toString()}: ${response.meta}");
+      return Parsed(null, [], "${response.responseCode.toString()}: ${response.meta}");
     } else {
       return Parsed(null, [], "Unknown error");
     }

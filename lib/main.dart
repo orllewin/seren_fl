@@ -1,6 +1,4 @@
-import 'dart:convert';
 import 'dart:developer';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:seren_fl/address_bar.dart';
@@ -52,12 +50,14 @@ class SerenHomePage extends StatefulWidget {
 }
 
 class _SerenHomePageState extends State<SerenHomePage> {
+  var uriHandler = UriHandler();
+
+  var firstRun = true;
+  String currentAddress = "gemini://seren.orllewin.uk";
   String? rawGemtext = "";
   List<GemtextLine> lines = [];
   String? error;
   List<String> history = [];
-
-  var uriHandler = UriHandler();
 
   static const defaultTextSize = 18.0;
   static const defaultPadding = 4.0;
@@ -70,11 +70,11 @@ class _SerenHomePageState extends State<SerenHomePage> {
           for (var element in history) {
             log("onWillPop: History item: $element");
           }
-          if(history.length > 1){
+          if (history.length > 1) {
             history.removeLast();
             onAddress(history.removeLast());
             return Future.value(false);
-          }else{
+          } else {
             return Future.value(true);
           }
         },
@@ -82,8 +82,7 @@ class _SerenHomePageState extends State<SerenHomePage> {
           appBar: AppBar(
             title: SizedBox(
               height: 75.0,
-              child: AddressBar(
-                  onHome: onHome, onAddress: onAddress, onOverflow: onOverflow),
+              child: AddressBar(autoload: firstRun, address: currentAddress, onHome: onHome, onAddress: onAddress, onOverflow: onOverflow),
             ),
             titleSpacing: 0.0,
             elevation: 0.0,
@@ -95,22 +94,16 @@ class _SerenHomePageState extends State<SerenHomePage> {
             itemBuilder: (context, position) {
               var item = lines[position];
               if (item is Regular) {
-                return Padding(
-                    padding: const EdgeInsets.all(defaultPadding),
-                    child: Text(item.line,
-                        style: const TextStyle(fontSize: defaultTextSize)));
+                return Padding(padding: const EdgeInsets.all(defaultPadding), child: Text(item.line, style: const TextStyle(fontSize: defaultTextSize)));
               } else if (item is Code) {
-                return Text(item.line,
-                    style: const TextStyle(fontSize: defaultTextSize));
+                return Text(item.line, style: const TextStyle(fontSize: defaultTextSize));
               } else if (item is Link) {
                 return InkWell(
                   child: Padding(
                       padding: const EdgeInsets.all(defaultPadding),
                       child: Text(
                         item.description ?? item.url ?? "Bad Link",
-                        style: const TextStyle(
-                            fontSize: defaultTextSize,
-                            decoration: TextDecoration.underline),
+                        style: const TextStyle(fontSize: defaultTextSize, decoration: TextDecoration.underline),
                       )),
                   onTap: () {
                     log("Link clicked: ${item.url}");
@@ -118,42 +111,19 @@ class _SerenHomePageState extends State<SerenHomePage> {
                   },
                 );
               } else if (item is ImageLink) {
-                return Padding(
-                    padding: const EdgeInsets.all(defaultPadding),
-                    child: Text(item.description ?? item.url ?? "Bad Link",
-                        style: const TextStyle(
-                            fontSize: defaultTextSize,
-                            decoration: TextDecoration.underline)));
+                return Padding(padding: const EdgeInsets.all(defaultPadding), child: Text(item.description ?? item.url ?? "Bad Link", style: const TextStyle(fontSize: defaultTextSize, decoration: TextDecoration.underline)));
               } else if (item is HeaderSmall) {
-                return Padding(
-                    padding: const EdgeInsets.all(defaultPadding),
-                    child: Text(item.line,
-                        style: const TextStyle(fontSize: 22.0)));
+                return Padding(padding: const EdgeInsets.all(defaultPadding), child: Text(item.line, style: const TextStyle(fontSize: 22.0)));
               } else if (item is HeaderMedium) {
-                return Padding(
-                    padding: const EdgeInsets.all(defaultPadding),
-                    child: Text(item.line,
-                        style: const TextStyle(fontSize: 28.0)));
+                return Padding(padding: const EdgeInsets.all(defaultPadding), child: Text(item.line, style: const TextStyle(fontSize: 28.0)));
               } else if (item is HeaderBig) {
-                return Padding(
-                    padding: const EdgeInsets.all(defaultPadding),
-                    child: Text(item.line,
-                        style: const TextStyle(fontSize: 32.0)));
+                return Padding(padding: const EdgeInsets.all(defaultPadding), child: Text(item.line, style: const TextStyle(fontSize: 32.0)));
               } else if (item is ListItem) {
-                return Padding(
-                    padding: const EdgeInsets.all(defaultPadding),
-                    child: Text(item.line,
-                        style: const TextStyle(fontSize: defaultTextSize)));
+                return Padding(padding: const EdgeInsets.all(defaultPadding), child: Text(item.line, style: const TextStyle(fontSize: defaultTextSize)));
               } else if (item is Quote) {
-                return Padding(
-                    padding: const EdgeInsets.all(defaultPadding),
-                    child: Text(item.line,
-                        style: const TextStyle(fontSize: defaultTextSize)));
+                return Padding(padding: const EdgeInsets.all(defaultPadding), child: Text(item.line, style: const TextStyle(fontSize: defaultTextSize)));
               } else {
-                return Padding(
-                    padding: const EdgeInsets.all(defaultPadding),
-                    child: Text(item.line,
-                        style: const TextStyle(fontSize: defaultTextSize)));
+                return Padding(padding: const EdgeInsets.all(defaultPadding), child: Text(item.line, style: const TextStyle(fontSize: defaultTextSize)));
               }
             },
           ),
@@ -214,10 +184,10 @@ class _SerenHomePageState extends State<SerenHomePage> {
 
     if (parsedResponse.error == null) {
       //add resolvedAddress to history
-      if(history.isEmpty || history.last != resolvedAddress) {
-        if(history.isEmpty){
+      if (history.isEmpty || history.last != resolvedAddress) {
+        if (history.isEmpty) {
           log("Adding $resolvedAddress to history, history is empty currently");
-        }else{
+        } else {
           log("Adding $resolvedAddress to history, currently last history item: ${history.last}");
         }
 
@@ -228,9 +198,10 @@ class _SerenHomePageState extends State<SerenHomePage> {
     //todo - better way?
     List<String> updatedHistory = [];
     updatedHistory.addAll(history);
-    history.clear();
 
     setState(() {
+      firstRun = false;
+      currentAddress = resolvedAddress;
       rawGemtext = parsedResponse.rawGemtext;
       lines = parsedResponse.lines;
       error = parsedResponse.error;
