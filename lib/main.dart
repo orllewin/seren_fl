@@ -65,7 +65,7 @@ class _SerenHomePageState extends State<SerenHomePage> {
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-        onWillPop: () {
+        onWillPop: () async {
           log("onWillPop: History size: ${history.length}");
           for (var element in history) {
             log("onWillPop: History item: $element");
