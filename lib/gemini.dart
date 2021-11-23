@@ -76,6 +76,7 @@ class Gemini {
 
           if (bytes != null) {
             //this is probably a bad way of doing things but what even is Dart?
+            //todo - suspect this is breaking the mathematical symbol unicode bock
             final content = String.fromCharCodes(bytes);
             body = body + content;
           }

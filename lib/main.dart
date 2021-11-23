@@ -61,7 +61,7 @@ class _SerenHomePageState extends State<SerenHomePage> {
   String? error;
   List<String> history = [];
 
-  static const defaultTextSize = 18.0;
+  static const defaultTextSize = 16.0;
   static const defaultPadding = 4.0;
 
   @override
@@ -115,11 +115,29 @@ class _SerenHomePageState extends State<SerenHomePage> {
               } else if (item is ImageLink) {
                 return Padding(padding: const EdgeInsets.all(defaultPadding), child: Text(item.description ?? item.url ?? "Bad Link", style: const TextStyle(fontSize: defaultTextSize, decoration: TextDecoration.underline)));
               } else if (item is HeaderSmall) {
-                return Padding(padding: const EdgeInsets.all(defaultPadding), child: Text(item.line, style: const TextStyle(fontSize: 22.0)));
+                return Padding(
+                    padding: const EdgeInsets.all(defaultPadding),
+                    child: Text(item.line,
+                        style: const TextStyle(
+                            fontSize: 20.0,
+                            fontWeight: FontWeight.bold
+                        )));
               } else if (item is HeaderMedium) {
-                return Padding(padding: const EdgeInsets.all(defaultPadding), child: Text(item.line, style: const TextStyle(fontSize: 28.0)));
+                return Padding(
+                    padding: const EdgeInsets.all(defaultPadding),
+                    child: Text(item.line,
+                        style: const TextStyle(
+                            fontSize: 24.0,
+                            fontWeight: FontWeight.bold
+                        )));
               } else if (item is HeaderBig) {
-                return Padding(padding: const EdgeInsets.all(defaultPadding), child: Text(item.line, style: const TextStyle(fontSize: 32.0)));
+                return Padding(
+                    padding: const EdgeInsets.all(defaultPadding),
+                    child: Text(item.line,
+                        style: const TextStyle(
+                            fontSize: 28.0,
+                            fontWeight: FontWeight.bold
+                        )));
               } else if (item is ListItem) {
                 return Padding(padding: const EdgeInsets.all(defaultPadding), child: Text(item.line, style: const TextStyle(fontSize: defaultTextSize)));
               } else if (item is Quote) {
