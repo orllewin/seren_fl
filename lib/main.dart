@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:seren_fl/address_bar.dart';
 import 'package:seren_fl/uri_handler.dart';
 
+import 'about_dialog.dart';
 import 'gemini.dart';
 import 'gemtext.dart';
 
@@ -90,7 +91,7 @@ class _SerenHomePageState extends State<SerenHomePage> {
           ),
           body: ListView.builder(
             itemCount: lines.length,
-            padding: EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(16.0),
             itemBuilder: (context, position) {
               var item = lines[position];
               if (item is Regular) {
@@ -165,6 +166,7 @@ class _SerenHomePageState extends State<SerenHomePage> {
         break;
       case AddressBar.menuAbout:
         log("Overflow clicked menuAbout");
+        About().showAboutDialog(context);
         break;
       default:
         log("Overflow clicked, unknownId: $menuId");
