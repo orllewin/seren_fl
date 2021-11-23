@@ -21,7 +21,7 @@ class About {
             child: ListBody(
               children: <Widget>[
                 Padding(
-                    padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
+                    padding: const EdgeInsets.fromLTRB(0, 8, 0, 4),
                     child: SvgPicture.asset(
                       "assets/seren.svg",
                       width: 100,
@@ -29,11 +29,14 @@ class About {
                     )),
                 Text(versionName, style: const TextStyle(fontSize: 12)),
                 const Text('\nmade by', style: TextStyle(fontSize: 12)),
-                SvgPicture.asset(
-                  "assets/orllewin.svg",
-                  width: 100,
-                  alignment: Alignment.centerLeft,
-                )
+                Padding(
+                    padding: const EdgeInsets.fromLTRB(0, 4, 0, 0),
+                    child: SvgPicture.asset(
+                      "assets/orllewin.svg",
+                      width: 100,
+                      alignment: Alignment.centerLeft,
+                    ))
+
               ],
             ),
           ),

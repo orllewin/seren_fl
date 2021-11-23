@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:seren_fl/address_bar.dart';
 import 'package:seren_fl/uri_handler.dart';
 
-import 'about_dialog.dart';
+import 'dialogs/about_dialog.dart';
+import 'dialogs/share_dialog.dart';
 import 'gemini.dart';
 import 'gemtext.dart';
 
@@ -63,6 +64,7 @@ class _SerenHomePageState extends State<SerenHomePage> {
 
   static const defaultTextSize = 16.0;
   static const defaultPadding = 4.0;
+  static const headerWeight = FontWeight.w400;
 
   @override
   Widget build(BuildContext context) {
@@ -120,7 +122,7 @@ class _SerenHomePageState extends State<SerenHomePage> {
                     child: Text(item.line,
                         style: const TextStyle(
                             fontSize: 20.0,
-                            fontWeight: FontWeight.bold
+                            fontWeight: headerWeight
                         )));
               } else if (item is HeaderMedium) {
                 return Padding(
@@ -128,7 +130,7 @@ class _SerenHomePageState extends State<SerenHomePage> {
                     child: Text(item.line,
                         style: const TextStyle(
                             fontSize: 24.0,
-                            fontWeight: FontWeight.bold
+                            fontWeight: headerWeight
                         )));
               } else if (item is HeaderBig) {
                 return Padding(
@@ -136,7 +138,7 @@ class _SerenHomePageState extends State<SerenHomePage> {
                     child: Text(item.line,
                         style: const TextStyle(
                             fontSize: 28.0,
-                            fontWeight: FontWeight.bold
+                            fontWeight: headerWeight
                         )));
               } else if (item is ListItem) {
                 return Padding(padding: const EdgeInsets.all(defaultPadding), child: Text(item.line, style: const TextStyle(fontSize: defaultTextSize)));
@@ -170,6 +172,7 @@ class _SerenHomePageState extends State<SerenHomePage> {
         break;
       case AddressBar.menuShare:
         log("Overflow clicked menuShare");
+        NativeShare().showShareDialog(uriHandler.uri);
         break;
       case AddressBar.menuBookmarks:
         log("Overflow clicked menuBookmarks");
