@@ -35,6 +35,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Seren',
       theme: ThemeData(
+        fontFamily: 'GoogleSans',
         primarySwatch: colorGCustom,
       ),
       home: const SerenHomePage(title: 'Seren'),
@@ -182,7 +183,7 @@ class _SerenHomePageState extends State<SerenHomePage> {
 
     var gemini = Gemini();
     var response = await gemini.geminiRequest(resolvedAddress);
-    var parsedResponse = gemini.parseResponse(response);
+    var parsedResponse = GemtextParser().parseResponse(response);
 
     if (parsedResponse.error == null) {
       //add resolvedAddress to history
@@ -197,7 +198,7 @@ class _SerenHomePageState extends State<SerenHomePage> {
       }
     }
 
-    //todo - better way?
+    //todo - better way? - is this even necessary?
     List<String> updatedHistory = [];
     updatedHistory.addAll(history);
 

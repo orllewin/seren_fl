@@ -1,3 +1,72 @@
+import 'dart:convert';
+import 'dart:developer';
+
+import 'gemini.dart';
+
+class GemtextParser{
+  Parsed parseResponse(Response response) {
+    if (response is Empty) {
+      log("Gemini response type: Empty");
+      return Parsed(null, [], "${response.responseCode.toString()}: Empty");
+    } else if (response is Gemtext) {
+      log("Gemini response type: Gemtext");
+      var rawLines = const LineSplitter().convert(response.body);
+      List<GemtextLine> parsedLines = [];
+
+      for (var line in rawLines) {
+        if (line.startsWith("=>")) {
+          //Link
+          var segments = line.substring(2).trim().split(" ");
+
+          log("Line: $line");
+
+          String? url;
+          String? description;
+
+          if (segments.length < 2) {
+            url = segments.first;
+            description = null;
+          } else {
+            url = segments.first;
+            description = segments.join(" ").replaceAll(url, "").trim();
+          }
+
+          //Image Link
+          if (segments.first.toLowerCase().endsWith(".png") || segments.first.toLowerCase().endsWith(".jpg") || segments.first.toLowerCase().endsWith(".jpeg")) {
+            parsedLines.add(GemtextLine.imageLink(line, url, description));
+          } else {
+            //Regular link
+            parsedLines.add(GemtextLine.link(line, url, description));
+          }
+        } else if (line.startsWith("#")) {
+          if (line.startsWith("###")) {
+            parsedLines.add(GemtextLine.headerSmall(line.substring(3).trim()));
+          } else if (line.startsWith("##")) {
+            parsedLines.add(GemtextLine.headerMedium(line.substring(2).trim()));
+          } else {
+            parsedLines.add(GemtextLine.headerBig(line.substring(1).trim()));
+          }
+        } else if (line.startsWith(">")) {
+          parsedLines.add(GemtextLine.quote(line.substring(1).trim()));
+        } else {
+          parsedLines.add(GemtextLine.regular(line));
+        }
+      }
+
+      return Parsed(response.body, parsedLines, null);
+    } else if (response is Error) {
+      log("Gemini response type: Error");
+      return Parsed(null, [], "${response.responseCode.toString()}: ${response.meta}");
+    } else if (response is Other) {
+      log("Gemini response type: Other");
+      //Something we don't handle yet
+      return Parsed(null, [], "${response.responseCode.toString()}: ${response.meta}");
+    } else {
+      return Parsed(null, [], "Unknown error");
+    }
+  }
+}
+
 class GemtextLine {
   GemtextLine._(this.line);
   final String line;
@@ -54,3 +123,4 @@ class ListItem extends GemtextLine {
 class Quote extends GemtextLine {
   Quote(String line): super._(line);
 }
+
