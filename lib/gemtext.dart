@@ -65,6 +65,21 @@ class GemtextParser{
       return Parsed(null, [], "Unknown error");
     }
   }
+
+  String findTitle(Response response) {
+
+    var title = "Unknown";
+
+    if(response is Parsed){
+      response.lines.sublist(0,5).forEach((line) {
+        if((line is HeaderBig || line is HeaderMedium || line is HeaderSmall) && title == "Unknown" ){
+          title = line.line;
+        }
+      });
+    }
+
+    return title;
+  }
 }
 
 class GemtextLine {

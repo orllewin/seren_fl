@@ -1,16 +1,23 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:seren_fl/address_bar.dart';
+import 'package:seren_fl/history/history.dart';
 import 'package:seren_fl/uri_handler.dart';
 
+import 'db/drift_database.dart';
 import 'dialogs/about_dialog.dart';
 import 'dialogs/share_dialog.dart';
 import 'gemini.dart';
 import 'gemtext.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  runApp(Provider<SerenDatabase>(
+    create: (context) => SerenDatabase(),
+    child: SerenApp(),
+    dispose: (context, db) => db.close(),
+  ));
 }
 
 Map<int, Color> color = {
@@ -28,8 +35,8 @@ Map<int, Color> color = {
 
 MaterialColor colorGCustom = MaterialColor(0xFFDEDEDE, color);
 
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+class SerenApp extends StatelessWidget {
+  const SerenApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +67,7 @@ class _SerenHomePageState extends State<SerenHomePage> {
   String? rawGemtext = "";
   List<GemtextLine> lines = [];
   String? error;
-  List<String> history = [];
+  List<String> runtimeHistory = [];
 
   static const defaultTextSize = 16.0;
   static const defaultPadding = 4.0;
@@ -70,13 +77,13 @@ class _SerenHomePageState extends State<SerenHomePage> {
   Widget build(BuildContext context) {
     return WillPopScope(
         onWillPop: () async {
-          log("onWillPop: History size: ${history.length}");
-          for (var element in history) {
+          log("onWillPop: History size: ${runtimeHistory.length}");
+          for (var element in runtimeHistory) {
             log("onWillPop: History item: $element");
           }
-          if (history.length > 1) {
-            history.removeLast();
-            onAddress(history.removeLast());
+          if (runtimeHistory.length > 1) {
+            runtimeHistory.removeLast();
+            onAddress(runtimeHistory.removeLast());
             return Future.value(false);
           } else {
             return Future.value(true);
@@ -117,29 +124,11 @@ class _SerenHomePageState extends State<SerenHomePage> {
               } else if (item is ImageLink) {
                 return Padding(padding: const EdgeInsets.all(defaultPadding), child: Text(item.description ?? item.url ?? "Bad Link", style: const TextStyle(fontSize: defaultTextSize, decoration: TextDecoration.underline)));
               } else if (item is HeaderSmall) {
-                return Padding(
-                    padding: const EdgeInsets.all(defaultPadding),
-                    child: Text(item.line,
-                        style: const TextStyle(
-                            fontSize: 20.0,
-                            fontWeight: headerWeight
-                        )));
+                return Padding(padding: const EdgeInsets.all(defaultPadding), child: Text(item.line, style: const TextStyle(fontSize: 20.0, fontWeight: headerWeight)));
               } else if (item is HeaderMedium) {
-                return Padding(
-                    padding: const EdgeInsets.all(defaultPadding),
-                    child: Text(item.line,
-                        style: const TextStyle(
-                            fontSize: 24.0,
-                            fontWeight: headerWeight
-                        )));
+                return Padding(padding: const EdgeInsets.all(defaultPadding), child: Text(item.line, style: const TextStyle(fontSize: 24.0, fontWeight: headerWeight)));
               } else if (item is HeaderBig) {
-                return Padding(
-                    padding: const EdgeInsets.all(defaultPadding),
-                    child: Text(item.line,
-                        style: const TextStyle(
-                            fontSize: 28.0,
-                            fontWeight: headerWeight
-                        )));
+                return Padding(padding: const EdgeInsets.all(defaultPadding), child: Text(item.line, style: const TextStyle(fontSize: 28.0, fontWeight: headerWeight)));
               } else if (item is ListItem) {
                 return Padding(padding: const EdgeInsets.all(defaultPadding), child: Text(item.line, style: const TextStyle(fontSize: defaultTextSize)));
               } else if (item is Quote) {
@@ -154,7 +143,7 @@ class _SerenHomePageState extends State<SerenHomePage> {
 
   onHome() {
     log("Home clicked");
-    history.clear();
+    runtimeHistory.clear();
     uriHandler.initialise("gemini://seren.orllewin.uk");
     onAddress(uriHandler.uri);
   }
@@ -179,6 +168,12 @@ class _SerenHomePageState extends State<SerenHomePage> {
         break;
       case AddressBar.menuHistory:
         log("Overflow clicked menuHistory");
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) {
+            return const HistoryScreen();
+          }),
+        );
         break;
       case AddressBar.menuIdentities:
         log("Overflow clicked menuIdentities");
@@ -208,20 +203,23 @@ class _SerenHomePageState extends State<SerenHomePage> {
 
     if (parsedResponse.error == null) {
       //add resolvedAddress to history
-      if (history.isEmpty || history.last != resolvedAddress) {
-        if (history.isEmpty) {
+      if (runtimeHistory.isEmpty || runtimeHistory.last != resolvedAddress) {
+        if (runtimeHistory.isEmpty) {
           log("Adding $resolvedAddress to history, history is empty currently");
         } else {
-          log("Adding $resolvedAddress to history, currently last history item: ${history.last}");
+          log("Adding $resolvedAddress to history, currently last history item: ${runtimeHistory.last}");
         }
 
-        history.add(resolvedAddress);
+        var title = GemtextParser().findTitle(parsedResponse);
+
+        runtimeHistory.add(resolvedAddress);
+        historyInsert(title, resolvedAddress);
       }
     }
 
     //todo - better way? - is this even necessary?
     List<String> updatedHistory = [];
-    updatedHistory.addAll(history);
+    updatedHistory.addAll(runtimeHistory);
 
     setState(() {
       firstRun = false;
@@ -229,7 +227,11 @@ class _SerenHomePageState extends State<SerenHomePage> {
       rawGemtext = parsedResponse.rawGemtext;
       lines = parsedResponse.lines;
       error = parsedResponse.error;
-      history = updatedHistory;
+      runtimeHistory = updatedHistory;
     });
+  }
+
+  Future historyInsert(String title, String address) async {
+    Provider.of<SerenDatabase>(context, listen: false).addHistory(title, address);
   }
 }
